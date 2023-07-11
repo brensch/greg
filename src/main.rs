@@ -44,14 +44,27 @@ pub struct GameStatus {
     pub you: Snake,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct RootResponse {
+    pub apiversion: String,
+    pub author: String,
+    pub color: String,
+    pub head: String,
+    pub tail: String,
+    pub version: String,
+}
 
+async fn index() -> Json<RootResponse> {
+    let response = RootResponse {
+        apiversion: String::from("1"),
+        author: String::from("MyUsername"),
+        color: String::from("#888888"),
+        head: String::from("default"),
+        tail: String::from("default"),
+        version: String::from("0.0.1-beta"),
+    };
 
-// Your GameStatus and other struct definitions here.
-
-async fn index() -> &'static str {
-    println!("got home");
-
-    "Hello, Battlesnake!"
+    Json(response)
 }
 
 async fn ping() -> impl IntoResponse {
@@ -60,7 +73,7 @@ async fn ping() -> impl IntoResponse {
 }
 
 async fn start() -> impl IntoResponse {
-    (StatusCode::OK, "{\"color\":\"#FF0000\",\"headType\":\"fang\",\"tailType\":\"bolt\"}")
+    (StatusCode::OK, "{}")
 }
 
 async fn make_move(Json(game_status): Json<GameStatus>) -> impl IntoResponse {
@@ -74,9 +87,21 @@ async fn end() -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() {
-    println!("hi");
-    let port = std::env::var("PORT").unwrap_or_else(|_| String::from("8000"));
-    let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
+    println!("Starting application");
+
+    let port = std::env::var("PORT").unwrap_or_else(|_| {
+        println!("No PORT environment variable detected, falling back to 8000");
+        String::from("8000")
+    });
+
+    let parsed_port = port.parse().unwrap_or_else(|_| {
+        println!("Failed to parse PORT environment variable, falling back to 8000");
+        8000
+    });
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], parsed_port));
+
+    println!("Server will bind to: {}", addr);
 
     let app = Router::new()
         .route("/", get(index))
@@ -85,8 +110,21 @@ async fn main() {
         .route("/move", post(make_move))
         .route("/end", post(end));
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let server = axum::Server::bind(&addr)
+        .serve(app.into_make_service());
+
+    let shutdown_signal = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install CTRL+C signal handler");
+    };
+
+    tokio::select! {
+        _ = server => {
+            println!("Server error.");
+        },
+        _ = shutdown_signal => {
+            println!("Shutting down.");
+        },
+    }
 }

@@ -1,7 +1,7 @@
 steps:
 # Build the Docker image
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/gregthesnake/greg', '.' ]
+  args: [ 'build', '--no-cache', '-t', 'gcr.io/gregthesnake/greg', '.' ]
 
 # Push the Docker image to Google Container Registry
 - name: 'gcr.io/cloud-builders/docker'

@@ -6,7 +6,6 @@ use axum::{
 };
 use std::net::SocketAddr;
 use serde::{Deserialize, Serialize};
-use tower::ServiceBuilder;
 use axum::response::IntoResponse;
 
 #[derive(Serialize, Deserialize)]
@@ -50,10 +49,13 @@ pub struct GameStatus {
 // Your GameStatus and other struct definitions here.
 
 async fn index() -> &'static str {
+    println!("got home");
+
     "Hello, Battlesnake!"
 }
 
 async fn ping() -> impl IntoResponse {
+    println!("got ping");
     (StatusCode::OK, "{}")
 }
 
@@ -72,6 +74,7 @@ async fn end() -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() {
+    println!("hi");
     let port = std::env::var("PORT").unwrap_or_else(|_| String::from("8000"));
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
 

@@ -1,89 +1,12 @@
 use axum::{
     handler::{get, post},
-    http::StatusCode,
     Router,
-    Json,
 };
 use std::net::SocketAddr;
-use serde::{Deserialize, Serialize};
-use axum::response::IntoResponse;
+use crate::handlers::{index, ping, start, make_move, end};
 
-#[derive(Serialize, Deserialize)]
-pub struct Coordinate {
-    pub x: i32,
-    pub y: i32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Snake {
-    pub id: String,
-    pub health: i32,
-    pub body: Vec<Coordinate>,
-    pub head: Coordinate,
-    pub length: i32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Game {
-    pub id: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Board {
-    pub height: i32,
-    pub width: i32,
-    pub food: Vec<Coordinate>,
-    pub snakes: Vec<Snake>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GameStatus {
-    pub game: Game,
-    pub turn: i32,
-    pub board: Board,
-    pub you: Snake,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RootResponse {
-    pub apiversion: String,
-    pub author: String,
-    pub color: String,
-    pub head: String,
-    pub tail: String,
-    pub version: String,
-}
-
-async fn index() -> Json<RootResponse> {
-    let response = RootResponse {
-        apiversion: String::from("1"),
-        author: String::from("MyUsername"),
-        color: String::from("#888888"),
-        head: String::from("default"),
-        tail: String::from("default"),
-        version: String::from("0.0.1-beta"),
-    };
-
-    Json(response)
-}
-
-async fn ping() -> impl IntoResponse {
-    println!("got ping");
-    (StatusCode::OK, "{}")
-}
-
-async fn start() -> impl IntoResponse {
-    (StatusCode::OK, "{}")
-}
-
-async fn make_move(Json(game_status): Json<GameStatus>) -> impl IntoResponse {
-    // Define your logic to decide the next move
-    (StatusCode::OK, "{\"move\":\"up\"}")
-}
-
-async fn end() -> impl IntoResponse {
-    StatusCode::OK
-}
+mod handlers;
+mod models;
 
 #[tokio::main]
 async fn main() {
@@ -104,11 +27,11 @@ async fn main() {
     println!("Server will bind to: {}", addr);
 
     let app = Router::new()
-        .route("/", get(index))
-        .route("/ping", post(ping))
-        .route("/start", post(start))
-        .route("/move", post(make_move))
-        .route("/end", post(end));
+    .route("/", get(index))
+    .route("/ping", post(ping))
+    .route("/start", post(start))
+    .route("/move", post(make_move)) 
+    .route("/end", post(end));
 
     let server = axum::Server::bind(&addr)
         .serve(app.into_make_service());
